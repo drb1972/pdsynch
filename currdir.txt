@@ -6,11 +6,11 @@
 28/04/2021  01:36    <DIR>          .
 28/04/2021  01:36    <DIR>          ..
 25/04/2021  09:55    <DIR>          .c4z
-28/04/2021  01:38               314 config.json
-28/04/2021  01:52                 0 currdir.txt
+28/04/2021  02:52               354 config.json
+28/04/2021  03:11                 0 currdir.txt
 28/04/2021  01:13               496 kk.txt
-28/04/2021  01:52            12.917 pdsynch.rex
+28/04/2021  03:10            13.612 pdsynch.rex
 22/04/2021  16:08                 9 README.md
 28/04/2021  01:45             1.582 start.rex
-               6 File(s)         15.318 bytes
-               3 Dir(s)  142.789.840.896 bytes free
+               6 File(s)         16.053 bytes
+               3 Dir(s)  142.713.597.952 bytes free
