@@ -79,6 +79,7 @@ pds2git:
    say ' Mainframe ---> GitHub'
    say '==================================='
 
+   commit = 'N'
 /* Create hlq.json file with all candidate PDSs to synchronize               */
    if SysFileExists('hlq.json') = 1 then "del hlq.json"
    do i = 1 to hlq.0 
@@ -134,17 +135,23 @@ pds2git:
             otherwise ext = 'txt'
          end
 
+/* Download the whole PDS                                                    */   
          'zowe zos-files download am "'||dsname.i||'" -e 'ext' --zosmf-p 'master_prof' --mcr 10 '
          say 'Creating 'dsname.i'.json file'
+/* Download a <pdsname>.json file with all members and its attributes (vvmm) */   
+/* This file will be used for next cycles comparison to see what changed     */   
+/* and be able to update other LPARs and the GitHub repository               */
          'zowe zos-files list am "'||dsname.i||'" -a --rfj --zosmf-p 'master_prof' > 'dsname.i||'.json'
          message = 'first-commit'
+/* git commit & push changes                                                 */
          call commit message 
          "git push"
-         /* Create files in other LPARs */
+
          if prof.0 > 0 then do
             do j = 1 to prof.0
                if prof.j = 'OFF' then iterate 
                returnedRows = ''; sal = ''
+/* Check if the PDS exists in the target LPARs                               */
                'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.json' 
 
                input_file  = 'temp.json'
@@ -155,6 +162,8 @@ pds2git:
                      when pos('"returnedRows":',sal)<>0 then parse var sal '"returnedRows":' returnedRows ','
                      otherwise nop
                   end /* select */
+/* If the PDS doesn't exist in the target LPAR we create it and              */
+/* synchronize the members                                                   */
                   if returnedRows = '0' then do
                      'zowe files create classic "'|| dsname.i ||'"  --bs 32720 --dst LIBRARY --rf FB --rl 80 --sz 15 --ss 15 --zosmf-p 'prof.j 
                      say 'zowe files upload dir-to-pds "'|| folder.i ||'" "'|| dsname.i ||'" --zosmf-p 'prof.j
@@ -169,14 +178,14 @@ pds2git:
 
       command = "exists = SysFileExists('"dsname.i || ".json')"
       interpret command
+/* If thew <pdsname>.json file with all members vvmm doesn't exists create it*/   
       if exists = 0 then 'zowe zos-files list am "'||dsname.i||'" -a --rfj --zosmf-p 'master_prof' > 'dsname.i||'.json'
 
-/* Update                                                            */
-
+/* Check for Updates in the Master LPAR and deploy the differences           */
       j=0; drop list.; drop table.;  member = ''; vers = ''; mod = ''
 
-/* Load old member version                                           */
-
+/* Load previous cycle member versions vvmm in a stem table.<member>.old     */
+/* each occurrence will have the vvmm                                        */
       say 'Loading previous member versions'
       input_file  = dsname.i||'.json'
       do while lines(input_file) \= 0
@@ -197,7 +206,8 @@ pds2git:
       end /* do queued() */
       call lineout input_file
 
-/* Load current member version                                       */
+/* Load current cycle member versions vvmm in a stem table.<member>.new      */
+/* each occurrence will have the vvmm                                        */
       say 'Loading current member versions'
       'zowe zos-files list am "'||dsname.i||'" -a --rfj --zosmf-p 'master_prof'> 'dsname.i||'.json'
       message = 'members-changed' 
@@ -223,7 +233,7 @@ pds2git:
 
       list.0 = j
 
-/* sort stem buble method */
+/* Sort stem list. with all the members (old and new)                        */
       Do k = list.0 To 1 By -1 Until flip_flop = 1
          flip_flop = 1
          Do j = 2 To k
@@ -243,6 +253,9 @@ pds2git:
          if list.k = list.j then iterate 
          member = list.k
          select
+/* The member has been deleted from the Master LPAR                          */
+/* We will delete from the working directory to update GitHub and from the   */
+/* target LPARS                                                              */                
             when table.member.new = 'TABLE.'||member||'.NEW' then do 
                say ' Deleting 'folder.i||'\'||member 
                'del 'folder.i||'\'||member||'.*'
@@ -256,6 +269,9 @@ pds2git:
                   end
                end
             end
+/* The member has been updated or created at the Master LPAR                 */
+/* We will download it to the the working directory to update GitHub and     */
+/* upload it to the target LPARS                                             */ 
             when table.member.new <> table.member.old then do 
                say dsname.i||'('||member||') updated from 'table.member.old ' to 'table.member.new
                select 
@@ -264,7 +280,6 @@ pds2git:
                   when pos('.COBOL',dsname.i)>0 then ext = 'cbl'
                   otherwise ext = 'txt'
                end
-
                'zowe files download ds "'||dsname.i||'('||member||')" -e 'ext '--zosmf-p 'master_prof
                if prof.0 > 0 then do
                   do l = 1 to prof.0
@@ -274,6 +289,7 @@ pds2git:
                      'zowe files upload file-to-data-set "'|| folder.i ||'\'member'.'ext'" "'|| dsname.i ||'('|| member ||')" --zosmf-p 'prof.l
                   end
                end
+/* The commit message will be the vvmm of the new/updated members            */
                message = table.member.new 
                call commit message
             end
@@ -283,7 +299,9 @@ pds2git:
 
    end /* do k = 1 to dsname.0 */
 
-/* cleanup delete PDS                                      */
+/* Cleanup: If a PDS has been deleted in the Master LPAR ar taken out of the */ 
+/* Datasets to synchronice in the config.json file it will be deleted from   */
+/* GitHub & the target LPARs as well                                         */
    stem = rxqueue("Create")
    call rxqueue "Set",stem
    "dir *.json /B | rxqueue "stem 
@@ -312,11 +330,17 @@ pds2git:
    end
 return
 
+/*---------------------------------------------------------------------------*/
+/* git2pds - Syncs the GitHub repo with all LPARs                            */
 git2pds:
    say '==================================='
    say ' GitHub --> Mainframe'
    say '==================================='
 
+/* First task is to make sure the Working directory is up to date, since the */ 
+/* Synch process could be run before unidirectional                          */
+/* In case that someone has been working offline with the repo we would get  */
+/* the files that have been crated/deleted/Modified                          */
    command = 'git pull'
    stem = rxqueue("Create")
    call rxqueue "Set",stem
@@ -334,14 +358,14 @@ git2pds:
    do k = 1 to hlq.0 
 
       hlq = hlq.k
-
+/* Since the folders structure is the same as PDSs we easily format the      */
+/* right structure                                                           */ 
       dir1 = translate(hlq,'\','.')     
       dir1 = translate(dir1,'','*')
       dir1 = translate(dir1,'','%')     
       dir2 = translate(dir1,'/','\')
       dir1 = lower(strip(dir1))
       dir2 = lower(strip(dir2))
-
  
       do m = 1 to pull.0
          filename = '' 
@@ -362,11 +386,19 @@ git2pds:
                i=i+1; dataset.i = substr(dataset_member,1,lp-1) 
                if SysFileExists(filename) = 0 then Do
                   say 'File 'filename 'doesn''t exist'
-                  /* Not deleting anything in the Mainframe */
-                  /* dxr */ say 'zowe zos-files delete data-set "'||dataset_member||'" --zosmf-p 'master_prof' -f '
+/* This section is commneted                                                 */
+/* Deleted files at GitHub would be deleted as well in the LPARs             */
+/* For security reasons we are not deleting anything in the Mainframe        */
+/* We just send a message */ say 'zowe zos-files delete data-set "'||dataset_member||'" --zosmf-p 'master_prof' -f '
+/*                if prof.0 > 0 then do
+                     do l = 1 to prof.0
+                        if prof.l = 'OFF' then iterate */
+                        say 'zowe zos-files upload file-to-data-set "'||filename||'" "'||dataset_member||'" --zosmf-p 'prof.l
+/*                     end
+                  end */
                end
                else do 
-               /* dxr - Me falta borrar/añadir a las otras LPARs y actualizar listado de miembros fichero.json*/
+/* New and updated files in GitHub will be updated at all LPARs              */
                   'zowe zos-files upload file-to-data-set "'||filename||'" "'||dataset_member||'" --zosmf-p 'master_prof
                   if prof.0 > 0 then do
                      do l = 1 to prof.0
@@ -379,12 +411,9 @@ git2pds:
             otherwise nop
          end
       end /* do queued() */
-      
-
-      
    end /* do  k = 1 to hlq.0 */
 
-
+/* Update de <pdsname>.json files with the current members vvmm              */
    dataset.0 = i
    do i = 1 to dataset.0
       say dataset.i 
@@ -393,10 +422,14 @@ git2pds:
       'zowe zos-files list am "'||dataset.i||'" -a --rfj --zosmf-p 'master_prof' > 'dataset.i||'.json'
    end
 return
+/*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+/* Commit changes                                                            */
 commit:
    parse caseless arg message 
    commit = 'Y'
    'git add -A'
    'git commit -a -m "'message'"'
 return
+/*---------------------------------------------------------------------------*/
