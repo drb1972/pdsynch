@@ -305,6 +305,19 @@ git2pds:
    say ' GitHub --> Mainframe'
    say '==================================='
 
+   command = 'git pull'
+   stem = rxqueue("Create")
+   call rxqueue "Set",stem
+   interpret "'"command" | rxqueue' "stem 
+   pull = 0; drop pull.
+   do queued()
+      parse caseless pull sal
+      pull = pull + 1; pull.pull = sal
+      say sal
+   end
+   call rxqueue "Delete", stem
+   pull.0 = pull
+
    drop dataset.; i=0
    do k = 1 to hlq.0 
 
@@ -317,15 +330,12 @@ git2pds:
       dir1 = lower(strip(dir1))
       dir2 = lower(strip(dir2))
 
-      command = 'git pull'
-      stem = rxqueue("Create")
-      call rxqueue "Set",stem
-      interpret "'"command" | rxqueue' "stem  
-      do queued()
+ 
+      do m = 1 to pull.0
          filename = '' 
-         parse caseless pull sal
+         sal = pull.m
          select
-            when pos('Already up to date.',sal)<>0 then say 'Up to Date'
+            when pos('Already up to date.',sal)<>0 then say hlq '-> Up to Date'
             when pos('files changed',sal)<>0 | pos('file changed',sal)<>0 then leave
             when pos(dir1,sal)<>0 | pos(dir2,sal)<>0 then do
                parse var sal filename ' |' . 
@@ -358,7 +368,7 @@ git2pds:
          end
       end /* do queued() */
       
-      call rxqueue "Delete", stem
+
       
    end /* do  k = 1 to hlq.0 */
 

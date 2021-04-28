@@ -2,11 +2,11 @@
    "hlq.1"       : "RODDI01.GIT.REXX",
    "hlq.2"       : "RODDI01.GIT.J*", 
    "hlq.3"       : "RODDI01.GIT.T*", 
-   "cycle"       : "0",
+   "cycle"       : "1",
    "master_prof" : "zosmf-sr01brs",
    "prof.1"      : "zosmf-mstrbrs",
    "stop"        : "N",
    "ghrepo"      : "https://github.com/drb1972/demo.git",
    "pds2git"     : "Y",
-   "git2pds"     : "N"
+   "git2pds"     : "Y"
 }
