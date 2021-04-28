@@ -129,27 +129,30 @@ pds2git:
          call commit message 
          "git push"
          /* Create files in other LPARs */
-         do j = 1 to prof.0
-            returnedRows = ''; sal = ''
-            'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.json' 
+         if prof.0 > 0 then do
+            do j = 1 to prof.0
+               if prof.j = 'OFF' then iterate 
+               returnedRows = ''; sal = ''
+               'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.json' 
 
-            input_file  = 'temp.json'
-            do while lines(input_file) \= 0
-               sal = linein(input_file)
-               select
-                  when pos('"stdout":',sal)<>0 then iterate
-                  when pos('"returnedRows":',sal)<>0 then parse var sal '"returnedRows":' returnedRows ','
-                  otherwise nop
-               end /* select */
-               if returnedRows = '0' then do
-                  'zowe files create classic "'|| dsname.i ||'"  --bs 32720 --dst LIBRARY --rf FB --rl 80 --sz 15 --ss 15 --zosmf-p 'prof.j 
-                  say 'zowe files upload dir-to-pds "'|| folder.i ||'" "'|| dsname.i ||'" --zosmf-p 'prof.j
-                  'zowe files upload dir-to-pds "'|| folder.i ||'" "'|| dsname.i ||'" --zosmf-p 'prof.j
-               end
-               returnedRows = ''
-            end /* while lines */
-            call lineout input_file
-         end /* do j */
+               input_file  = 'temp.json'
+               do while lines(input_file) \= 0
+                  sal = linein(input_file)
+                  select
+                     when pos('"stdout":',sal)<>0 then iterate
+                     when pos('"returnedRows":',sal)<>0 then parse var sal '"returnedRows":' returnedRows ','
+                     otherwise nop
+                  end /* select */
+                  if returnedRows = '0' then do
+                     'zowe files create classic "'|| dsname.i ||'"  --bs 32720 --dst LIBRARY --rf FB --rl 80 --sz 15 --ss 15 --zosmf-p 'prof.j 
+                     say 'zowe files upload dir-to-pds "'|| folder.i ||'" "'|| dsname.i ||'" --zosmf-p 'prof.j
+                     'zowe files upload dir-to-pds "'|| folder.i ||'" "'|| dsname.i ||'" --zosmf-p 'prof.j
+                  end
+                  returnedRows = ''
+               end /* while lines */
+               call lineout input_file
+            end /* do j */
+         end /* if */
       end
 
       command = "exists = SysFileExists('"dsname.i || ".json')"
@@ -233,9 +236,12 @@ pds2git:
                'del 'folder.i||'\'||member||'.*'
                message = 'Delete'
                call commit message
-               do l = 1 to prof.0
-                  say 'Delete member from 'prof.l
-                  'zowe files delete data-set "'|| dsname.i ||'('member')" -f --zosmf-p 'prof.l
+               if prof.0 > 0 then do
+                  do l = 1 to prof.0
+                     if prof.l = 'OFF' then iterate
+                     say 'Delete member from 'prof.l
+                     'zowe files delete data-set "'|| dsname.i ||'('member')" -f --zosmf-p 'prof.l
+                  end
                end
             end
             when table.member.new <> table.member.old then do 
@@ -248,10 +254,13 @@ pds2git:
                end
 
                'zowe files download ds "'||dsname.i||'('||member||')" -e 'ext '--zosmf-p 'master_prof
-               do l = 1 to prof.0
-                  say 'Copy member to 'prof.l
-                  say 'zowe files upload file-to-data-set "'|| folder.i ||'\'member'.'ext'" "'|| dsname.i ||'('|| member ||')" --zosmf-p 'prof.l
-                  'zowe files upload file-to-data-set "'|| folder.i ||'\'member'.'ext'" "'|| dsname.i ||'('|| member ||')" --zosmf-p 'prof.l
+               if prof.0 > 0 then do
+                  do l = 1 to prof.0
+                     if prof.l = 'OFF' then iterate
+                     say 'Copy member to 'prof.l
+                     say 'zowe files upload file-to-data-set "'|| folder.i ||'\'member'.'ext'" "'|| dsname.i ||'('|| member ||')" --zosmf-p 'prof.l
+                     'zowe files upload file-to-data-set "'|| folder.i ||'\'member'.'ext'" "'|| dsname.i ||'('|| member ||')" --zosmf-p 'prof.l
+                  end
                end
                message = table.member.new 
                call commit message
@@ -296,6 +305,7 @@ git2pds:
    say ' GitHub --> Mainframe'
    say '==================================='
 
+   drop dataset.; i=0
    do k = 1 to hlq.0 
 
       hlq = hlq.k
@@ -306,8 +316,6 @@ git2pds:
       dir2 = translate(dir1,'/','\')
       dir1 = lower(strip(dir1))
       dir2 = lower(strip(dir2))
-
-      drop dataset.; i=0
 
       command = 'git pull'
       stem = rxqueue("Create")
@@ -338,6 +346,12 @@ git2pds:
                else do 
                /* dxr - Me falta borrar/añadir a las otras LPARs y actualizar listado de miembros fichero.json*/
                   'zowe zos-files upload file-to-data-set "'||filename||'" "'||dataset_member||'" --zosmf-p 'master_prof
+                  if prof.0 > 0 then do
+                     do l = 1 to prof.0
+                        if prof.l = 'OFF' then iterate
+                        'zowe zos-files upload file-to-data-set "'||filename||'" "'||dataset_member||'" --zosmf-p 'prof.l
+                     end
+                  end
                end /* if SysFileExists */   
             end
             otherwise nop
