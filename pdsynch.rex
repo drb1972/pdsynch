@@ -1,4 +1,7 @@
-/* pdsynch                                                            */
+/* pdsynch                                                                   */
+/*---------------------------------------------------------------------------*/
+/* currdir ------> Directory of the service location                         */
+/* folder_name --> Directory of the working directory                        */
 parse arg currdir folder_name
 
 do forever
@@ -15,6 +18,8 @@ end
 
 exit
 
+/*---------------------------------------------------------------------------*/
+/* Check if the Master & other LPARs are UP                                  */
 check_lpars:
    say 'MASTERPROF : 'master_prof
    'zowe zosmf check status --zosmf-p 'master_prof ' > 'master_prof ||'.txt'
@@ -42,7 +47,8 @@ check_lpars:
    end
 return
 
-/* read congig.json file                                             */
+/*---------------------------------------------------------------------------*/
+/* read congig.json file                                                     */
 read_config:
    say '==================================='
    say ' Reading configuration'
@@ -64,21 +70,24 @@ read_config:
    end /* do while */
    call lineout input_file
 return
+/*---------------------------------------------------------------------------*/
 
-/* pds2git - Syncs PDS files with GitHub                             */
+/*---------------------------------------------------------------------------*/
+/* pds2git - Syncs PDS files from Master LPAR to GitHub and other LPARs      */
 pds2git:
    say '==================================='
    say ' Mainframe ---> GitHub'
    say '==================================='
 
-/* retrieve hlq PDS names and load dsname. stem                      */
+/* Create hlq.json file with all candidate PDSs to synchronize               */
    if SysFileExists('hlq.json') = 1 then "del hlq.json"
    do i = 1 to hlq.0 
       'zowe zos-files list ds "'hlq.i'" -a --rfj --zosmf-p 'master_prof' >> hlq.json' 
    end
 
    drop dsname.; drop folder.; i = 0; dsname = ''; dsorg = ''; sal = ''
-   
+
+/* Select only PO LRECL=80 PDSs and load dsname. stem                        */
    input_file  = 'hlq.json'
    do while lines(input_file) \= 0
       sal = linein(input_file)
@@ -97,32 +106,35 @@ pds2git:
       end /* if dsname */
    end /* while lines */
    call lineout input_file
+
+/* Display the datasets that are going to be Synchronized                    */
    dsname.0 = i
-   /* dxr*/ do i = 1 to dsname.0
+      do i = 1 to dsname.0
    say dsname.i
    end
 
-/* for each PDS                                                      */
-
+/* for each PDS                                                              */
    do i = 1 to dsname.0
       folder.i = translate(dsname.i,'\','.')     
       say dsname.i '--> ' folder.i
       x = value(dsname.i,'ok')
-      
+
+/* We check if there is a local folder inj the working directory             */
       command = "exists = SysIsFileDirectory('"folder.i"')"
       interpret command
       if exists = 0 then do 
-/* New PDS or first time                                             */   
+/* New PDS or first time synch                                               */   
          say 'Folder doesn''t exist'
 
+/* Set file extensions for known files                                       */   
          select 
-            when pos('.rex',dsname.i)>0 then ext = '-e rex'
-            when pos('.jcl',dsname.i)>0 then ext = '-e jcl'
-            when pos('.COBOL',dsname.i)>0 then ext = '-e cbl'
-            otherwise ext = ''
+            when pos('.rex',dsname.i)>0 then ext = 'rex'
+            when pos('.jcl',dsname.i)>0 then ext = 'jcl'
+            when pos('.COBOL',dsname.i)>0 then ext = 'cbl'
+            otherwise ext = 'txt'
          end
 
-         'zowe zos-files download am "'||dsname.i||'" 'ext' --zosmf-p 'master_prof' --mcr 10 '
+         'zowe zos-files download am "'||dsname.i||'" -e 'ext' --zosmf-p 'master_prof' --mcr 10 '
          say 'Creating 'dsname.i'.json file'
          'zowe zos-files list am "'||dsname.i||'" -a --rfj --zosmf-p 'master_prof' > 'dsname.i||'.json'
          message = 'first-commit'

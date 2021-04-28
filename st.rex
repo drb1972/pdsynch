@@ -1,6 +1,7 @@
-/* rexx */
+/* rexx - st */
 call read_config
-
+/*---------------------------------------------------------------------------*/
+/* Retrieve the name of the Service location                                 */
 "dir > currdir.txt"
 input_file  = 'currdir.txt'
 do while lines(input_file) \= 0
@@ -11,11 +12,12 @@ do while lines(input_file) \= 0
    end 
 end /* do while */
 call lineout input_file
+/*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+/* Working Directory                                                         */
 if SysIsFileDirectory('C:\Temp') = 0 then "md C:\Temp"
-
 "cd C:\Temp"
-
 parse var ghrepo . '//' . '/' . '/' folder_name '.git'
 
 if SysIsFileDirectory(folder_name) = 0 then do
@@ -23,16 +25,19 @@ if SysIsFileDirectory(folder_name) = 0 then do
    "git clone "ghrepo
 end
 "cd "folder_name
+/* Copy congif file from Service Location to Working Directory               */
 "copy "currdir||"\pdsynch.rex"
 "copy "currdir||"\config.json"
 "echo pdsynch.rex > .gitignore"
-"echo *.json >> .gitignore"
+/* "echo *.json >> .gitignore" */
 'git commit -a -m "first-commit"'
 
+/* Start running the service                                                 */
 "rexx pdsynch.rex" currdir folder_name
 exit
 
-/* read congig.json file                                             */
+/*---------------------------------------------------------------------------*/
+/* read congig.json file                                                     */
 read_config:
    say '==================================='
    say ' Reading configuration'
@@ -54,4 +59,4 @@ read_config:
    end /* do while */
    call lineout input_file
 return
-
+/*---------------------------------------------------------------------------*/
