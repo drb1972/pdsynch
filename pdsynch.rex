@@ -299,9 +299,9 @@ pds2git:
 
    end /* do k = 1 to dsname.0 */
 
-/* Cleanup: If a PDS has been deleted in the Master LPAR ar taken out of the */ 
+/* Cleanup: If a PDS has been deleted in the Master LPAR or taken out of the */ 
 /* Datasets to synchronice in the config.json file it will be deleted from   */
-/* GitHub & the target LPARs as well                                         */
+/* GitHub but not on the target LPARs                                        */
    stem = rxqueue("Create")
    call rxqueue "Set",stem
    "dir *.json /B | rxqueue "stem 
