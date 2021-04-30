@@ -5,7 +5,7 @@
    "cycle"       : "1",
    "master_prof" : "zosmf-sr01brs",
    "prof.1"      : "zosmf-mstrbrs",
-   "stop"        : "N",
+   "stop"        : "Y",
    "ghrepo"      : "https://github.com/drb1972/demo.git",
    "pds2git"     : "Y",
    "git2pds"     : "Y"

@@ -152,9 +152,9 @@ pds2git:
                if prof.j = 'OFF' then iterate 
                returnedRows = ''; sal = ''
 /* Check if the PDS exists in the target LPARs                               */
-               'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.json' 
+               'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.txt' 
 
-               input_file  = 'temp.json'
+               input_file  = 'temp.txt'
                do while lines(input_file) \= 0
                   sal = linein(input_file)
                   select
@@ -172,6 +172,7 @@ pds2git:
                   returnedRows = ''
                end /* while lines */
                call lineout input_file
+               "del temp.txt"
             end /* do j */
          end /* if */
       end
