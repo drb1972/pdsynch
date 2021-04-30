@@ -80,7 +80,7 @@ pds2git:
    say '==================================='
 
    commit = 'N'
-/* Create hlq.json file with all candidate PDSs to synchronize               */
+/* Create hlq.json file with all PDS under config.json HLQs                  */
    if SysFileExists('hlq.json') = 1 then "del hlq.json"
    do i = 1 to hlq.0 
       'zowe zos-files list ds "'hlq.i'" -a --rfj --zosmf-p 'master_prof' >> hlq.json' 
@@ -88,7 +88,7 @@ pds2git:
 
    drop dsname.; drop folder.; i = 0; dsname = ''; dsorg = ''; sal = ''
 
-/* Select only PO LRECL=80 PDSs and load dsname. stem                        */
+/* Read hlq.json and select only PO LRECL=80 PDSs and load dsname. stem      */
    input_file  = 'hlq.json'
    do while lines(input_file) \= 0
       sal = linein(input_file)
@@ -120,7 +120,7 @@ pds2git:
       say dsname.i '--> ' folder.i
       x = value(dsname.i,'ok')
 
-/* We check if there is a local folder inj the working directory             */
+/* We check if there is a local folder in the working directory              */
       command = "exists = SysIsFileDirectory('"folder.i"')"
       interpret command
       if exists = 0 then do 
