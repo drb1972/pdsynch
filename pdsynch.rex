@@ -319,9 +319,9 @@ pds2git:
 
             returnedRows = ''; sal = ''
 /* Check if the PDS exists in the Master LPAR                                */
-            'zowe zos-files list ds "'json_file'" --rfj --zosmf-p 'master_prof' > temp.json' 
+            'zowe zos-files list ds "'json_file'" --rfj --zosmf-p 'master_prof' > temp.txt' 
 
-            input_file  = 'temp.json'
+            input_file  = 'temp.txt'
             do while lines(input_file) \= 0
                sal = linein(input_file)
                select
@@ -341,8 +341,9 @@ pds2git:
                end /* if retirnedRows */
                returnedRows = ''
             end /* while lines */
-            "del temp.json"
             call lineout input_file
+            "del temp.txt"
+
 /* Delete the folder in the working directory to clean the GitHub repo       */
             "del "json_file || '.json'
             del_dir = translate(json_file,'\','.') 
