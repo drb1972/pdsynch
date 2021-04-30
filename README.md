@@ -37,7 +37,7 @@ At this particular case we work in a master LPAR creating, deleting or updating 
 
 - Configure your settings at [config.json](config.json) :
    - `hlq.#` : Set of libraries to synchronize. # must be sequential number (hlq.1, hlq.2 ...). 
-      - `"hlq.1"   : "CUST001.M*",` 
+      - ```"hlq.1"   : "CUST001.M*",``` 
       - `"hlq.2"   : "CUST002.M*"`
    - `cycle` : Time in seconds between synchronization cycles. A value of 0 means a single execution.
       - `"cycle"       : "0"`  : Single cycle execution. 
@@ -73,6 +73,8 @@ At this particular case we work in a master LPAR creating, deleting or updating 
 
 - The time to complete one cycle of the process (check changes on Master LPAR datasets and populate them) will depend on the amount of datasets candidates for synchronization and the amount of target LPARs.
 
+- All code is in https://github.com/drb1972/pdsynch.git . The repo is public
+
 - When executing the `st.rex` script, the utility will create a service workspace directory named after the GitHub repo at C:\Temp.
 
 - Synchronization is be done at member level, not the whole libraries.
@@ -89,7 +91,7 @@ At this particular case we work in a master LPAR creating, deleting or updating 
 
 - When working offline with git2pds synchronization, it is recommended to delete de cloned workspace after finishing and clone it again the next time or issue a "git pull" command before pushing the changes back into the GitHub repo to be synchronized with the LPARs. 
 
-- When defining wildcards at `"hlq.1"   : "CUST001.M*",` at the [config.json](config.json) only asterisks (*) ar eallowed at the last position of the dataset name.
+- When defining wildcards at `"hlq.1"   : "CUST001.M*",` at the [config.json](config.json) only asterisks (*) are allowed at the last position of the dataset name.
 ---
 
 ## Tests
