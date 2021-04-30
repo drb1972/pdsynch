@@ -30,7 +30,7 @@ end
 "copy "currdir||"\config.json"
 "echo pdsynch.rex > .gitignore"
 "echo *.txt >> .gitignore"
-"echo *.json >> .gitignore" 
+/* "echo *.json >> .gitignore" */
 'git commit -a -m "first-commit"'
 
 /* Start running the service                                                 */
