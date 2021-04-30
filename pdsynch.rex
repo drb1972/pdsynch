@@ -341,6 +341,7 @@ pds2git:
                end /* if retirnedRows */
                returnedRows = ''
             end /* while lines */
+            "del temp.json"
             call lineout input_file
 /* Delete the folder in the working directory to clean the GitHub repo       */
             "del "json_file || '.json'
