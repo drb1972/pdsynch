@@ -80,7 +80,7 @@ pds2git:
    say '==================================='
 
    commit = 'N'
-/* Create hlq.json file with all candidate PDSs to synchronize               */
+/* Create hlq.json file with all PDS under config.json HLQs                  */
    if SysFileExists('hlq.json') = 1 then "del hlq.json"
    do i = 1 to hlq.0 
       'zowe zos-files list ds "'hlq.i'" -a --rfj --zosmf-p 'master_prof' >> hlq.json' 
@@ -88,7 +88,7 @@ pds2git:
 
    drop dsname.; drop folder.; i = 0; dsname = ''; dsorg = ''; sal = ''
 
-/* Select only PO LRECL=80 PDSs and load dsname. stem                        */
+/* Read hlq.json and select only PO LRECL=80 PDSs and load dsname. stem      */
    input_file  = 'hlq.json'
    do while lines(input_file) \= 0
       sal = linein(input_file)
@@ -120,7 +120,7 @@ pds2git:
       say dsname.i '--> ' folder.i
       x = value(dsname.i,'ok')
 
-/* We check if there is a local folder inj the working directory             */
+/* We check if there is a local folder in the working directory              */
       command = "exists = SysIsFileDirectory('"folder.i"')"
       interpret command
       if exists = 0 then do 
@@ -152,9 +152,9 @@ pds2git:
                if prof.j = 'OFF' then iterate 
                returnedRows = ''; sal = ''
 /* Check if the PDS exists in the target LPARs                               */
-               'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.json' 
+               'zowe zos-files list ds "'dsname.i'" -a --rfj --zosmf-p 'prof.j' > temp.txt' 
 
-               input_file  = 'temp.json'
+               input_file  = 'temp.txt'
                do while lines(input_file) \= 0
                   sal = linein(input_file)
                   select
@@ -172,6 +172,7 @@ pds2git:
                   returnedRows = ''
                end /* while lines */
                call lineout input_file
+               "del temp.txt"
             end /* do j */
          end /* if */
       end
@@ -314,17 +315,48 @@ pds2git:
          when value(json_file) = 'ok' then x = value(json_file,'ko')
          otherwise do 
             say ' Deleting 'json_file 
+/* Check if the PDS has been deleted from Master LPAR or just from the       */
+/* config.json set of datasets                                               */
+
+            returnedRows = ''; sal = ''
+/* Check if the PDS exists in the Master LPAR                                */
+            'zowe zos-files list ds "'json_file'" --rfj --zosmf-p 'master_prof' > temp.txt' 
+
+            input_file  = 'temp.txt'
+            do while lines(input_file) \= 0
+               sal = linein(input_file)
+               select
+                  when pos('"stdout":',sal)<>0 then iterate
+                  when pos('"returnedRows":',sal)<>0 then parse var sal '"returnedRows":' returnedRows ','
+                  otherwise nop
+               end /* select */
+/* If the PDS doesn't exist in Master LPAR we delete from the target LPARs   */
+               if returnedRows = '0' then do
+                  if prof.0 > 0 then do
+                     do j = 1 to prof.0
+                        if prof.j = 'OFF' then iterate
+                        'zowe files delete data-set "'|| json_file ||'"  -f --zosmf-p 'prof.j 
+                        say 'zowe files delete data-set "'|| json_file ||'"  -f --zosmf-p 'prof.j
+                     end /* do j */
+                  end  /* if prof */
+               end /* if retirnedRows */
+               returnedRows = ''
+            end /* while lines */
+            call lineout input_file
+            "del temp.txt"
+
+/* Delete the folder in the working directory to clean the GitHub repo       */
             "del "json_file || '.json'
             del_dir = translate(json_file,'\','.') 
             "rmdir /S /Q "del_dir  
             message = 'no more synch'
             call commit message
-         end
-      end
-   end
+         end /* otherwise */
+      end /* select */
+   end /* do queued() */
    call rxqueue "Delete", stem
 
-
+/* If anything has changed in the cycle then push to GitHub                  */
    if commit = 'Y' then do
       'git push'
    end
