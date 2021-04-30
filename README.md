@@ -37,7 +37,7 @@ At this particular case we work in a master LPAR creating, deleting or updating 
 
 - Configure your settings at [config.json](config.json) :
    - `hlq.#` : Set of libraries to synchronize. # must be sequential number (hlq.1, hlq.2 ...). 
-      - ```"hlq.1"   : "CUST001.M*",``` 
+      - `"hlq.1"   : "CUST001.M*",` 
       - `"hlq.2"   : "CUST002.M*"`
    - `cycle` : Time in seconds between synchronization cycles. A value of 0 means a single execution.
       - `"cycle"       : "0"`  : Single cycle execution. 
