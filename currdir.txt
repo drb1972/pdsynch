@@ -3,13 +3,14 @@
 
  Directory of C:\Users\dr891415\Wokshop\pdsynch
 
-30/04/2021  11:55    <DIR>          .
-30/04/2021  11:55    <DIR>          ..
+30/04/2021  16:25    <DIR>          .
+30/04/2021  16:25    <DIR>          ..
 25/04/2021  09:55    <DIR>          .c4z
-30/04/2021  12:18               315 config.json
-30/04/2021  12:24                 0 currdir.txt
+06/05/2021  12:12               276 config.json
+06/05/2021  12:16                 0 currdir.txt
 30/04/2021  12:01            20.519 pdsynch.rex
 30/04/2021  02:11             6.864 README.md
+30/04/2021  16:25            77.923 README.pdf
 30/04/2021  11:51             2.348 st.rex
-               5 File(s)         30.046 bytes
-               3 Dir(s)  142.632.132.608 bytes free
+               6 File(s)        107.930 bytes
+               3 Dir(s)  189.083.893.760 bytes free

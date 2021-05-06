@@ -1,6 +1,5 @@
 {
    "hlq.1"       : "RODDI01.GIT.REX*",
-   "hlq.2"       : "RODDI01.GIT.J*", 
    "cycle"       : "1",
    "master_prof" : "zosmf-sr01brs",
    "prof.1"      : "zosmf-mstrbrs",
