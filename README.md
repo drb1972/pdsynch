@@ -19,7 +19,7 @@ At this particular case we work in a master LPAR creating, deleting or updating 
 
 ## Requirements:
 - Windows 
-- zowe
+- zowe Version 1
 - zOSMF REST APIs installed on the Mainframe 
 - ooRexx
 - local git global configured by any valid method:
