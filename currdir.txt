@@ -1,7 +1,7 @@
  Volume in drive C is Windows
  Volume Serial Number is A06C-B1D2
 
- Directory of C:\Users\dr891415\Wokshop\pdsynch
+ Directory of C:\Users\userid\Wokshop\pdsynch
 
 06/05/2021  12:43    <DIR>          .
 06/05/2021  12:43    <DIR>          ..
