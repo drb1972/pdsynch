@@ -31,7 +31,7 @@ At this particular case we work in a master LPAR creating, deleting or updating 
 ---
 
 ## Instructions
-- Plant a tree.
+- Plant a tree ;)
 
 - Create an empty GitHub repo (only the first time).
 
