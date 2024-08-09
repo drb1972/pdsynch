@@ -1,9 +1,9 @@
 {
-   "hlq.1"       : "RODDI01.GIT.REX*",
-   "hlq.2"       : "RODDI01.GIT.JCL*",
+   "hlq.1"       : "MYUSERID.GIT.REX*",
+   "hlq.2"       : "MYUSERID.GIT.JCL*",
    "cycle"       : "1",
-   "master_prof" : "zosmf-sr01brs-roddi01",
-   "prof.1"      : "zosmf-mstrbrs-roddi01",
+   "master_prof" : "zosmf-masterlpar-myuserid",
+   "prof.1"      : "zosmf-tgtlpar1-myuserid",
    "stop"        : "N",
    "ghrepo"      : "https://github.com/drb1972/demo.git",
    "pds2git"     : "Y",
